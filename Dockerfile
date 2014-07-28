@@ -1,22 +1,33 @@
-FROM ubuntu
- 
-RUN apt-get update
-RUN apt-get -y install wget
-RUN apt-get -y install git
- 
-# install Ruby 1.9.3-p484
-RUN apt-get -y install build-essential zlib1g-dev libreadline-dev libssl-dev libcurl4-openssl-dev
-RUN git clone https://github.com/sstephenson/rbenv.git ~/.rbenv
-RUN git clone https://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
-RUN echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bash_profile
-RUN echo 'eval "$(rbenv init -)"' >> ~/.bash_profile
-ENV PATH /.rbenv/bin:/.rbenv/shims:$PATH
-RUN echo PATH=$PATH
-RUN rbenv init -
-RUN rbenv install 1.9.3-p484 && rbenv global 1.9.3-p484
+# Use phusion/passenger-full as base image. To make your builds reproducible, make
+# sure you lock down to a specific version, not to `latest`!
+# See https://github.com/phusion/passenger-docker/blob/master/Changelog.md for
+# a list of version numbers.
+FROM phusion/passenger-full:0.9.11
 
-# never install a ruby gem docs
-RUN echo "gem: --no-rdoc --no-ri" >> ~/.gemrc
- 
-# Install bundler and the "bundle" shim
-RUN gem install bundler && rbenv rehash
+# Set correct environment variables.
+ENV HOME /root
+
+# Use baseimage-docker's init process.
+CMD ["/sbin/my_init"]
+
+# If you're using the 'customizable' variant, you need to explicitly opt-in
+# for features. Uncomment the features you want:
+#
+#   Build system and git.
+#RUN /build/utilities.sh
+#   Ruby support.
+#RUN /build/ruby1.9.sh
+#RUN /build/ruby2.0.sh
+#RUN /build/ruby2.1.sh
+#   Common development headers necessary for many Ruby gems,
+#   e.g. libxml for Nokogiri.
+#RUN /build/devheaders.sh
+#   Python support.
+#RUN /build/python.sh
+#   Node.js and Meteor support.
+#RUN /build/nodejs.sh
+
+# ...put your own build instructions here...
+
+# Clean up APT when done.
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
